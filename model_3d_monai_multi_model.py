@@ -12,18 +12,22 @@ import random
 import numpy as np
 import pandas as pd
 import torch
+import torchvision
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 import monai
 from monai.data import ImageDataset, DataLoader
-from monai.transforms import EnsureChannelFirst, Compose, RandRotate90, Resize, ScaleIntensity
+from monai.transforms import EnsureChannelFirst, Compose, RandRotate90, Resize, ScaleIntensity, NormalizeIntensity, ToTensor
 import pickle
 import argparse
 from monai.data.utils import pad_list_data_collate
 import matplotlib.pyplot as plt
-import config_file as cfg
-from utils import get_model
+# import config_file as cfg
+# from utils import get_model
 from torchsummary import summary
+
+from SFCN import SFCNModel
+
 
 def main():
     monai.config.print_config()
@@ -31,13 +35,20 @@ def main():
 
     # use parser if running from bash script
     parser = argparse.ArgumentParser()
-    parser.add_argument('--expname', type=str, help='experiment name', required=True)
+    parser.add_argument('--exp_name', type=str, default='no_bias', help='experiment name')
     parser.add_argument('--model_name', type=str, default='densenet', help='Name of the model to use: densenet, resnet, efficientnet, etc.')
     parser.add_argument('--seed', type=int, help='seed for reproducibility', required=True)
 
     args = parser.parse_args()
-    exp_name = args.expname
+    exp_name = args.exp_name
     model_name = args.model_name
+
+    BATCH_SIZE = 16
+    N_WORKERS = 0
+    N_EPOCHS = 100
+    MAX_IMAGES = -1
+    LR = 0.0001
+    PATIENCE = 5
 
 
     # exp_name = 'exp_mini_test'
@@ -64,34 +75,33 @@ def main():
     home_dir = './'
     working_dir = home_dir + exp_name + '/'
 
-    df_train = pd.read_csv(os.path.join(working_dir, "train.csv"))
-    df_val = pd.read_csv(os.path.join(working_dir, "val.csv"))
+    df_train = pd.read_csv(os.path.join(home_dir, "splits/train.csv"))
+    df_val = pd.read_csv(os.path.join(home_dir, "splits/val.csv"))
 
-    train_fpaths = df_train['filepath'].to_numpy()
-    train_class_label = df_train['class_label'].to_numpy()
+    train_fpaths = [os.path.join(working_dir, "train", filename.replace(".nii.gz", ".tiff")) for filename in df_train['filename']]
+    train_class_label = df_train['class_label']
 
-    val_fpaths = df_val['filepath'].to_numpy()
-    val_class_label = df_val['class_label'].to_numpy()
+    val_fpaths = [os.path.join(working_dir, "val",filename.replace(".nii.gz", ".tiff")) for filename in df_val['filename']]
+    val_class_label = df_val['class_label']
 
     # Define transforms
-    train_transforms = Compose([ScaleIntensity(), EnsureChannelFirst(), Resize((cfg.params['imagex'], cfg.params['imagey'], cfg.params['imagez']))])
-    val_transforms = Compose([ScaleIntensity(), EnsureChannelFirst(), Resize((cfg.params['imagex'], cfg.params['imagey'], cfg.params['imagez']))])
+    transforms = Compose([torchvision.transforms.CenterCrop(150), EnsureChannelFirst(), NormalizeIntensity(), ToTensor()])
 
     # create a training data loader - include padding
-    train_ds = ImageDataset(image_files=train_fpaths, labels=train_class_label, transform=train_transforms)
-    train_loader = DataLoader(train_ds, batch_size=cfg.params['batch_size'], shuffle=True, num_workers=2,worker_init_fn=seed_worker, generator=g, pin_memory=torch.cuda.is_available(), collate_fn=pad_list_data_collate)
+    train_ds = ImageDataset(image_files=train_fpaths, labels=train_class_label, transform=transforms, reader="ITKReader")
+    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True, num_workers=2,worker_init_fn=seed_worker, generator=g, pin_memory=torch.cuda.is_available(), collate_fn=pad_list_data_collate)
 
     # create a validation data loader - include padding
-    val_ds = ImageDataset(image_files=val_fpaths, labels=val_class_label, transform=val_transforms)
-    val_loader = DataLoader(val_ds, batch_size=cfg.params['batch_size'], shuffle=False, worker_init_fn=seed_worker, generator=g,num_workers=2, pin_memory=torch.cuda.is_available(), collate_fn=pad_list_data_collate)
+    val_ds = ImageDataset(image_files=val_fpaths, labels=val_class_label, transform=transforms, reader="ITKReader")
+    val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False, worker_init_fn=seed_worker, generator=g,num_workers=N_WORKERS, pin_memory=torch.cuda.is_available(), collate_fn=pad_list_data_collate)
 
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = get_model(model_name, spatial_dims=3, in_channels=1, out_channels=2).to(device)
-    summary(model, (1, cfg.params['imagex'], cfg.params['imagey'], cfg.params['imagez']))
+    model = SFCNModel().to(device)
+    # summary(model, (1, cfg.params['imagex'], cfg.params['imagey'], cfg.params['imagez']))
 
     loss_function = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), cfg.params['lr'])
+    optimizer = torch.optim.Adam(model.parameters(), LR)
 
     # start a typical PyTorch training
     patience_counter = 0  # to keep track of the number of epochs without improvement
@@ -104,9 +114,9 @@ def main():
     epoch_loss_values = []
     val_epoch_loss_values = []
 
-    for epoch in range(cfg.params['epochs']):
+    for epoch in range(N_EPOCHS):
         print("-" * 10)
-        print(f"epoch {epoch + 1}/{cfg.params['epochs']}")
+        print(f"epoch {epoch + 1}/{N_EPOCHS}")
         model.train()
         epoch_loss = 0
         val_epoch_loss = 0
@@ -114,6 +124,7 @@ def main():
         val_step = 0
         for batch_data in train_loader:
             step += 1
+
             inputs, labels = batch_data[0].to(device), batch_data[1].to(device)
             optimizer.zero_grad()
             # print(inputs)
@@ -182,7 +193,7 @@ def main():
                 else:
                     patience_counter += 1  # increment the counter when no improvement is found
 
-                if patience_counter >= cfg.params['patience']:
+                if patience_counter >= PATIENCE:
                     print(f"Early stopping at epoch {epoch + 1}, best val loss: {best_val_loss:.4f} at epoch: {best_metric_epoch}")
                     break  # exit the loop when the patience limit is reached
 

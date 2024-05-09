@@ -1,8 +1,6 @@
 from torch import nn
 import torch
 
-import train
-
 
 class SFCNModel(nn.Module):
     def __init__(self):
@@ -53,7 +51,7 @@ class SFCNModel(nn.Module):
         self.avgpool1 = nn.AvgPool2d(kernel_size=1)
         self.dropout1 = nn.Dropout(.5)
         self.flat1 = nn.Flatten()
-        self.linear1 = nn.Linear(1280, 2)
+        self.linear1 = nn.Linear(1024, 2)
 
         self.sigmoid = nn.Sigmoid()
 

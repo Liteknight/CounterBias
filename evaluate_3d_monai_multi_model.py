@@ -17,8 +17,8 @@ from monai.data import  ImageDataset, DataLoader
 from monai.transforms import EnsureChannelFirst, Compose, Resize, ScaleIntensity
 import argparse
 from tqdm import tqdm
-import config_file as cfg
-from utils import get_model, model_eval, compute_metrics, plot_roc_curves
+# import config_file as cfg
+# from utils import get_model, model_eval, compute_metrics, plot_roc_curves
 
 
 
@@ -28,7 +28,7 @@ def main():
 
     # use parser if running from bash script
     parser = argparse.ArgumentParser()
-    parser.add_argument('--exp_name', type=str, help='experiment name', required=True)
+    parser.add_argument('--exp_name', type=str, default='no_bias', help='experiment name')
     parser.add_argument('--model_name', type=str, default='densenet', help='Name of the model to use: densenet, resnet, efficientnet, etc.')
 
     args = parser.parse_args()
