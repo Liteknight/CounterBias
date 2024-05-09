@@ -11,6 +11,8 @@ import tifffile
 import pandas as pd
 from torch.utils.data import Dataset
 
+DIR = "./no_bias"
+
 BATCH_SIZE = 16
 N_WORKERS = 0
 N_EPOCHS = 100
@@ -27,7 +29,9 @@ def crop_center(img, cropx, cropy):
 def main():
 
     # Reading the data and the denormalization function
-    images, mean_age, ages, get_age = read_data("./no_bias", postfix=".tiff", max_entries=MAX_IMAGES)
+    images, mean_age, ages, get_age = read_data(DIR, postfix=".tiff", max_entries=MAX_IMAGES)
+    images, mean_age, ages, get_age = read_data(DIR, postfix=".tiff", max_entries=MAX_IMAGES)
+    images, mean_age, ages, get_age = read_data(DIR, postfix=".tiff", max_entries=MAX_IMAGES)
 
     # Add transforms to the dataset
     transforms = Compose([torchvision.transforms.CenterCrop(150), EnsureChannelFirst(), NormalizeIntensity()])
