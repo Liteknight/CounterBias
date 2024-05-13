@@ -24,10 +24,14 @@ from monai.data.utils import pad_list_data_collate
 import matplotlib.pyplot as plt
 # import config_file as cfg
 # from utils import get_model
-from torchsummary import summary
+# from torchsummary import summary
 
 from SFCN import SFCNModel
 
+def seed_worker(worker_id):
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
 
 def main():
     monai.config.print_config()
@@ -37,7 +41,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', type=str, default='no_bias', help='experiment name')
     parser.add_argument('--model_name', type=str, default='densenet', help='Name of the model to use: densenet, resnet, efficientnet, etc.')
-    parser.add_argument('--seed', type=int, help='seed for reproducibility', required=True)
+    parser.add_argument('--seed', type=int, help='seed for reproducibility', default=1)
 
     args = parser.parse_args()
     exp_name = args.exp_name
@@ -45,7 +49,7 @@ def main():
 
     BATCH_SIZE = 16
     N_WORKERS = 0
-    N_EPOCHS = 100
+    N_EPOCHS = 20
     MAX_IMAGES = -1
     LR = 0.0001
     PATIENCE = 5
@@ -61,12 +65,6 @@ def main():
     torch.backends.cudnn.benchmark = False
     random.seed(seed)
     np.random.seed(seed)
-
-
-    def seed_worker(worker_id):
-        worker_seed = torch.initial_seed() % 2**32
-        np.random.seed(worker_seed)
-        random.seed(worker_seed)
 
     g = torch.Generator()
     g.manual_seed(seed)
@@ -100,7 +98,7 @@ def main():
     model = SFCNModel().to(device)
     # summary(model, (1, cfg.params['imagex'], cfg.params['imagey'], cfg.params['imagez']))
 
-    loss_function = torch.nn.CrossEntropyLoss()
+    loss_function = torch.nn.BCELoss()
     optimizer = torch.optim.Adam(model.parameters(), LR)
 
     # start a typical PyTorch training
@@ -138,7 +136,7 @@ def main():
 
             # print(labels)
 
-            loss = loss_function(outputs, labels)
+            loss = loss_function(outputs, labels.float())
 
             loss.backward()
             optimizer.step()
@@ -173,7 +171,7 @@ def main():
 
                     #early stopping based on val loss
                     val_outputs = model(val_images) #fwd pass
-                    val_loss = loss_function(val_outputs, val_labels) # calculate the loss
+                    val_loss = loss_function(val_outputs, val_labels.float()) # calculate the loss
                     val_epoch_loss += val_loss.item()# update running validation loss
                     val_epoch_len = len(val_ds) // val_loader.batch_size
                     print(f"{val_step}/{val_epoch_len}, val_loss: {val_loss.item():.4f}")

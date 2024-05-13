@@ -51,7 +51,7 @@ class SFCNModel(nn.Module):
         self.avgpool1 = nn.AvgPool2d(kernel_size=1)
         self.dropout1 = nn.Dropout(.5)
         self.flat1 = nn.Flatten()
-        self.linear1 = nn.Linear(1024, 2)
+        self.linear1 = nn.Linear(1024, 1)
 
         self.sigmoid = nn.Sigmoid()
 
@@ -67,6 +67,7 @@ class SFCNModel(nn.Module):
         x = self.block6(x)
         x = self.block7(x)
 
-        return torch.squeeze(x,1) # change to 2?
+        # return torch.squeeze(x,1) # change to 2?
+        return torch.squeeze(x)
 
             
