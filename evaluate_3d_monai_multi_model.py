@@ -13,14 +13,27 @@ import pandas as pd
 import torch
 import random
 import monai
+import torchvision
 from monai.data import  ImageDataset, DataLoader
-from monai.transforms import EnsureChannelFirst, Compose, Resize, ScaleIntensity
+from monai.transforms import EnsureChannelFirst, Compose, Resize, ScaleIntensity, NormalizeIntensity, ToTensor
 import argparse
 from tqdm import tqdm
+
+from SFCN import SFCNModel
 # import config_file as cfg
 # from utils import get_model, model_eval, compute_metrics, plot_roc_curves
 
+BATCH_SIZE = 16
+N_WORKERS = 0
+N_EPOCHS = 20
+MAX_IMAGES = -1
+LR = 0.0001
+PATIENCE = 5
 
+def seed_worker(worker_id):
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
 
 def main():
     monai.config.print_config()
@@ -40,38 +53,32 @@ def main():
     random.seed(seed)
     np.random.seed(seed)
 
-    def seed_worker(worker_id):
-        worker_seed = torch.initial_seed() % 2**32
-        np.random.seed(worker_seed)
-        random.seed(worker_seed)
-
     g = torch.Generator()
     g.manual_seed(seed)
 
 
-    home_dir = '/home/emma/Documents/SBB/'
+    home_dir = './'
     working_dir = home_dir + exp_name + '/'
 
 
-    df_test = pd.read_csv(os.path.join(working_dir, "test.csv"))
+    df_test = pd.read_csv(os.path.join(home_dir, "splits/test.csv"))
 
-    test_fpaths = df_test['filepath'].to_numpy()
-    test_class_label = df_test['class_label'].to_numpy()
+    test_fpaths = [os.path.join(working_dir, "test", filename.replace(".nii.gz", ".tiff")) for filename in df_test['filename']]
+    test_class_label = df_test['class_label']
 
     # Define transforms for image
-    test_transforms = Compose([ScaleIntensity(), EnsureChannelFirst(), Resize((cfg.params['imagex'], cfg.params['imagey'], cfg.params['imagez']))])
+    transforms = Compose([torchvision.transforms.CenterCrop(150), EnsureChannelFirst(), NormalizeIntensity(), ToTensor()])
 
     # Define image dataset
-    test_ds = ImageDataset(image_files=test_fpaths, labels=test_class_label, transform=test_transforms, image_only=True)
+    test_ds = ImageDataset(image_files=test_fpaths, labels=test_class_label, transform=transforms, image_only=True, reader="ITKReader")
 
     # create a validation data loader
-    test_loader = DataLoader(test_ds, batch_size=cfg.params['batch_size'], num_workers=4, generator=g, pin_memory=torch.cuda.is_available())
+    test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, num_workers=4, generator=g, pin_memory=torch.cuda.is_available())
 
     # Create DenseNet121
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model = get_model(model_name).to(device)
-
+    model = SFCNModel().to(device)
     model.load_state_dict(torch.load(working_dir + "best_model_" + exp_name + ".pth"))
 
     model.eval()
@@ -85,8 +92,8 @@ def main():
 
             # Get model's probability outputs
             outputs = model(test_images)
-            probs = torch.nn.functional.softmax(outputs, dim=1).cpu().numpy()
-            all_preds.extend(probs)
+            # probs = torch.nn.functional.softmax(outputs, dim=1).cpu().numpy()
+            # all_preds.extend(probs)
 
             # saver.save_batch(torch.tensor(test_outputs).to(device), test_images.meta)
 

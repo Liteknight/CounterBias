@@ -41,7 +41,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', type=str, default='no_bias', help='experiment name')
     parser.add_argument('--model_name', type=str, default='densenet', help='Name of the model to use: densenet, resnet, efficientnet, etc.')
-    parser.add_argument('--seed', type=int, help='seed for reproducibility', default=1)
+    # parser.add_argument('--seed', type=int, help='seed for reproducibility', default=1)
 
     args = parser.parse_args()
     exp_name = args.exp_name
@@ -59,7 +59,7 @@ def main():
     # model_name = 'cnn3d'
     # seed = 1
 
-    seed = args.seed  # You can use any integer as the seed
+    seed = 1  # You can use any integer as the seed
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
@@ -79,7 +79,7 @@ def main():
     train_fpaths = [os.path.join(working_dir, "train", filename.replace(".nii.gz", ".tiff")) for filename in df_train['filename']]
     train_class_label = df_train['class_label']
 
-    val_fpaths = [os.path.join(working_dir, "val",filename.replace(".nii.gz", ".tiff")) for filename in df_val['filename']]
+    val_fpaths = [os.path.join(working_dir, "val", filename.replace(".nii.gz", ".tiff")) for filename in df_val['filename']]
     val_class_label = df_val['class_label']
 
     # Define transforms
@@ -111,6 +111,9 @@ def main():
     # Initialize empty lists for metric values and epoch loss
     epoch_loss_values = []
     val_epoch_loss_values = []
+
+    val_epoch_accuracy = []
+    val_epoch_accuracy_values = []
 
     for epoch in range(N_EPOCHS):
         print("-" * 10)
@@ -151,6 +154,10 @@ def main():
         if (epoch + 1) % val_interval == 0:
             model.eval()
             with torch.no_grad():
+
+                total_correct_predictions_val = 0
+                total_predictions_val = 0
+
                 for val_data in val_loader:
                     val_step += 1
 
@@ -174,11 +181,23 @@ def main():
                     val_loss = loss_function(val_outputs, val_labels.float()) # calculate the loss
                     val_epoch_loss += val_loss.item()# update running validation loss
                     val_epoch_len = len(val_ds) // val_loader.batch_size
-                    print(f"{val_step}/{val_epoch_len}, val_loss: {val_loss.item():.4f}")
+
+                    # Compute accuracy for the current batch
+                    val_predictions = (val_outputs > 0.5).float()  # Assuming sigmoid activation function for binary classification
+                    val_correct_predictions = (val_predictions == val_labels).sum().item()
+                    total_correct_predictions_val += val_correct_predictions
+                    total_predictions_val += val_labels.numel()
+                    val_batch_accuracy = val_correct_predictions / val_labels.numel()
+
+                    print(f"{val_step}/{val_epoch_len}, val_loss: {val_loss.item():.4f}, batch_accuracy: {val_batch_accuracy:.4f}")
 
                 val_epoch_loss /= val_step
                 val_epoch_loss_values.append(val_epoch_loss)
-                print(f"epoch {epoch + 1} average val loss: {val_epoch_loss:.4f}")
+
+                val_epoch_accuracy = total_correct_predictions_val / total_predictions_val
+                val_epoch_accuracy_values.append(val_epoch_accuracy)
+
+                print(f"epoch {epoch + 1} average val loss: {val_epoch_loss:.4f}, epoch_accuracy: {val_epoch_accuracy:.4f}")
 
                 if val_epoch_loss < best_val_loss:
                     best_val_loss = val_epoch_loss
