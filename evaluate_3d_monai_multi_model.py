@@ -21,7 +21,7 @@ from tqdm import tqdm
 
 from SFCN import SFCNModel
 # import config_file as cfg
-# from utils import get_model, model_eval, compute_metrics, plot_roc_curves
+from utils import model_eval, compute_metrics, plot_roc_curves
 
 BATCH_SIZE = 16
 N_WORKERS = 0
@@ -93,7 +93,7 @@ def main():
             # Get model's probability outputs
             outputs = model(test_images)
             # probs = torch.nn.functional.softmax(outputs, dim=1).cpu().numpy()
-            # all_preds.extend(probs)
+            all_preds.extend(outputs.cpu().numpy())
 
             # saver.save_batch(torch.tensor(test_outputs).to(device), test_images.meta)
 
