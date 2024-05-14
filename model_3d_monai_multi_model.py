@@ -39,9 +39,9 @@ def main():
 
     # use parser if running from bash script
     parser = argparse.ArgumentParser()
-    parser.add_argument('--exp_name', type=str, default='no_bias', help='experiment name')
-    parser.add_argument('--model_name', type=str, default='densenet', help='Name of the model to use: densenet, resnet, efficientnet, etc.')
-    # parser.add_argument('--seed', type=int, help='seed for reproducibility', default=1)
+    parser.add_argument('--exp_name', type=str, default='near_bias', help='experiment name')
+    parser.add_argument('--model_name', type=str, default='resnet', help='Name of the model to use: densenet, resnet, efficientnet, etc.')
+    parser.add_argument('--seed', type=int, help='seed for reproducibility', default=1)
 
     args = parser.parse_args()
     exp_name = args.exp_name
