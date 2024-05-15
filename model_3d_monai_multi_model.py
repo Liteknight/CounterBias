@@ -39,7 +39,7 @@ def main():
 
     # use parser if running from bash script
     parser = argparse.ArgumentParser()
-    parser.add_argument('--exp_name', type=str, default='near_bias', help='experiment name')
+    parser.add_argument('--exp_name', type=str, default='no_bias', help='experiment name')
     parser.add_argument('--model_name', type=str, default='resnet', help='Name of the model to use: densenet, resnet, efficientnet, etc.')
     parser.add_argument('--seed', type=int, help='seed for reproducibility', default=1)
 
@@ -83,7 +83,7 @@ def main():
     val_class_label = df_val['class_label']
 
     # Define transforms
-    transforms = Compose([torchvision.transforms.CenterCrop(150), EnsureChannelFirst(), NormalizeIntensity(), ToTensor()])
+    transforms = Compose([torchvision.transforms.CenterCrop(180), EnsureChannelFirst(), NormalizeIntensity(), ToTensor()])
 
     # create a training data loader - include padding
     train_ds = ImageDataset(image_files=train_fpaths, labels=train_class_label, transform=transforms, reader="ITKReader")

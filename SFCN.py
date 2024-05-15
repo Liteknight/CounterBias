@@ -51,7 +51,7 @@ class SFCNModel(nn.Module):
         self.avgpool1 = nn.AvgPool2d(kernel_size=1)
         self.dropout1 = nn.Dropout(.5)
         self.flat1 = nn.Flatten()
-        self.linear1 = nn.Linear(1024, 1)
+        self.linear1 = nn.Linear(1600, 1)
 
         self.sigmoid = nn.Sigmoid()
 

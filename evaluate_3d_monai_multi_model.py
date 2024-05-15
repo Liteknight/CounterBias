@@ -41,7 +41,7 @@ def main():
 
     # use parser if running from bash script
     parser = argparse.ArgumentParser()
-    parser.add_argument('--exp_name', type=str, default='near_bias', help='experiment name')
+    parser.add_argument('--exp_name', type=str, default='no_bias', help='experiment name')
     parser.add_argument('--model_name', type=str, default='densenet', help='Name of the model to use: densenet, resnet, efficientnet, etc.')
 
     args = parser.parse_args()
@@ -67,7 +67,7 @@ def main():
     test_class_label = df_test['class_label']
 
     # Define transforms for image
-    transforms = Compose([torchvision.transforms.CenterCrop(150), EnsureChannelFirst(), NormalizeIntensity(), ToTensor()])
+    transforms = Compose([torchvision.transforms.CenterCrop(180), EnsureChannelFirst(), NormalizeIntensity(), ToTensor()])
 
     # Define image dataset
     test_ds = ImageDataset(image_files=test_fpaths, labels=test_class_label, transform=transforms, image_only=True, reader="ITKReader")
