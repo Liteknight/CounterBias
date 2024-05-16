@@ -1,0 +1,18 @@
+flow:
+  nl: 2
+  hm: [4,4]
+  batch_norm: true
+
+training:
+  epochs: 50
+  batch_size: 64
+
+optim:
+  weight_decay: 0.00005
+  optimizer: "Adam"
+  lr: 0.01
+  beta1: 0.9
+  amsgrad: false
+  scheduler: false
+
+
