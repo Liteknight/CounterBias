@@ -1,5 +1,5 @@
-/splits/*.pkl
-/exp138
-/exp139
+*.pkl
 /runs
 /data
+/exp138
+/exp139
