@@ -142,7 +142,7 @@ class MACAW:
                                betas=(self.c.optim.beta1, 0.999), amsgrad=self.c.optim.amsgrad)
 
         if self.c.optim.scheduler:
-            scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, patience=3, verbose=True)
+            scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, patience=3)
         else:
             scheduler = None
 
@@ -180,7 +180,10 @@ class MACAW:
             train_loss /= len(train_loader)
             val_loss /= len(valid_loader)
 
-            pbar.set_description(f'Training Loss: {train_loss:.3f}, Val Loss: {val_loss:.3f}')
+            curr_lr = optimizer.param_groups[0]['lr']
+
+            pbar.set_description(
+                f'Epoch {e + 1}/{self.epochs} - Training Loss: {train_loss:.3f}, Val Loss: {val_loss:.3f}, LR: {curr_lr:.6f}')
             loss_vals_train.append(train_loss)
             loss_vals_val.append(val_loss)
 

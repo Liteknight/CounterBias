@@ -4,13 +4,13 @@ flow:
   batch_norm: true
 
 training:
-  epochs: 30
+  epochs: 50
   batch_size: 64
 
 optim:
   weight_decay: 0.00005
   optimizer: "Adam"
-  lr: 0.005 
+  lr: 0.0001
   beta1: 0.9
   amsgrad: false
   scheduler: true
