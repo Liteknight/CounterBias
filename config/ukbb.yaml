@@ -5,7 +5,7 @@ flow:
 
 training:
   epochs: 50
-  batch_size: 64
+  batch_size: 128
 
 optim:
   weight_decay: 0.00005

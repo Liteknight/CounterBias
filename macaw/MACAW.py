@@ -182,6 +182,8 @@ class MACAW:
 
             curr_lr = optimizer.param_groups[0]['lr']
 
+            print(f'Epoch {e + 1}/{self.epochs} - Training Loss: {train_loss:.3f}, Val Loss: {val_loss:.3f}, LR: {curr_lr:.6f}')
+
             pbar.set_description(
                 f'Epoch {e + 1}/{self.epochs} - Training Loss: {train_loss:.3f}, Val Loss: {val_loss:.3f}, LR: {curr_lr:.6f}')
             loss_vals_train.append(train_loss)
