@@ -114,11 +114,14 @@ class UKBBT1Dataset(Dataset):
         return self.df.iloc[idx]['Sex'], self.df.iloc[idx]['Age'], self.df.iloc[idx]['BMI'], img
 
 class EmmaDataset(Dataset):
-    def __init__(self, csv_file_path, img_dir, transform=None):
+    def __init__(self, csv_file_path, img_dir, no_bias, transform=None):
         self.csv_file_path = csv_file_path
         self.img_dir = img_dir
         self.df = pd.read_csv(csv_file_path, low_memory=True)
         self.transform = transform
+
+        if no_bias:
+            self.df['bias_label'].values[:] = 0
 
     def __len__(self):
         return len(self.df)

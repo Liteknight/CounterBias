@@ -1,10 +1,10 @@
 import SimpleITK as sitk
 import os
 
-dir = "./exp139/"
-split = "test/"
+dir = "./exp140/"
+split = "val/"
 
-output_dir = "./near_bias/" + split
+output_dir = "./far_bias/" + split
 
 # Create the output directory if it doesn't exist
 if not os.path.exists(output_dir):

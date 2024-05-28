@@ -1,5 +1,4 @@
 *.pkl
 /runs
 /data
-/exp138
-/exp139
+/exp*
