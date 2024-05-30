@@ -112,7 +112,7 @@ class MACAW:
 
         return loss_vals
 
-    def fit_with_priors(self, data, edges, priors):
+    def fit_with_priors(self, train_ds, val_ds, edges, priors):
         """
         Assuming data columns follow the causal ordering, we fit the associated 1D-Equations.
 
@@ -121,16 +121,10 @@ class MACAW:
         data: numpy.ndarray
         dag: edges of the predefined causal DAG
         """
-        self.dim = data.shape[1]
+        self.dim = train_ds.shape[1]
 
-        dataset = CustomDataset(data.astype(np.float32), self.device)
-
-        from torch.utils.data import random_split
-
-        train_size = int(0.9 * len(dataset))
-        valid_size = len(dataset) - train_size
-
-        train_dataset, valid_dataset = random_split(dataset, [train_size, valid_size])
+        train_dataset = CustomDataset(train_ds.astype(np.float32), self.device)
+        valid_dataset = CustomDataset(val_ds.astype(np.float32), self.device)
 
         train_loader = DataLoader(train_dataset, shuffle=True, batch_size=self.batch_size)
         valid_loader = DataLoader(valid_dataset, shuffle=True, batch_size=self.batch_size)

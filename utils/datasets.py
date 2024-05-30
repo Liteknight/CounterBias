@@ -127,7 +127,7 @@ class EmmaDataset(Dataset):
         return len(self.df)
 
     def __getitem__(self, idx):
-        img_name = self.df.iloc[idx]['filename'].replace("nii.gz", "tiff")
+        img_name = self.df.iloc[idx]['filename']
         img = tiff.imread(self.img_dir / img_name)
 
         if self.transform:
