@@ -4,8 +4,8 @@ flow:
   batch_norm: true
 
 training:
-  epochs: 50
-  batch_size: 128
+  epochs: 40
+  batch_size: 32
 
 optim:
   weight_decay: 0.00005

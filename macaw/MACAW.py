@@ -126,8 +126,8 @@ class MACAW:
         train_dataset = CustomDataset(train_ds.astype(np.float32), self.device)
         valid_dataset = CustomDataset(val_ds.astype(np.float32), self.device)
 
-        train_loader = DataLoader(train_dataset, shuffle=True, batch_size=self.batch_size)
-        valid_loader = DataLoader(valid_dataset, shuffle=True, batch_size=self.batch_size)
+        train_loader = DataLoader(train_dataset, shuffle=False, batch_size=self.batch_size)
+        valid_loader = DataLoader(valid_dataset, shuffle=False, batch_size=self.batch_size)
 
         flow_list = [Flow(self.dim + self.pdim, edges, self.device, hm=self.hidden) for _ in range(self.n_layers)]
         self.model = NormalizingFlowModel(priors, flow_list).to(self.device)
@@ -140,8 +140,15 @@ class MACAW:
         else:
             scheduler = None
 
+        # Early stopping parameters
+        patience = 1
+        min_delta = 1
+        best_val_loss = float('inf')
+        epochs_no_improve = 0
+
         loss_vals_train = []
         loss_vals_val = []
+
         for e in (pbar := tqdm(range(self.epochs))):
             train_loss = 0
             val_loss = 0
@@ -176,12 +183,21 @@ class MACAW:
 
             curr_lr = optimizer.param_groups[0]['lr']
 
-            # print(f'Epoch {e + 1}/{self.epochs} - Training Loss: {train_loss:.3f}, Val Loss: {val_loss:.3f}, LR: {curr_lr:.6f}')
-
             pbar.set_description(
                 f'Epoch {e + 1}/{self.epochs} - Training Loss: {train_loss:.3f}, Val Loss: {val_loss:.3f}, LR: {curr_lr:.6f}')
             loss_vals_train.append(train_loss)
             loss_vals_val.append(val_loss)
+
+            # Check for early stopping
+            if val_loss < best_val_loss - min_delta:
+                best_val_loss = val_loss
+                epochs_no_improve = 0
+            else:
+                epochs_no_improve += 1
+
+            if epochs_no_improve >= patience:
+                print(f'Early stopping at epoch {e + 1}')
+                break
 
         return loss_vals_train, loss_vals_val
 
