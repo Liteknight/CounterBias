@@ -161,6 +161,9 @@ class MACAW:
                 loss = - torch.sum(prior_logprob + log_det)
                 train_loss += loss.item()
 
+                if (loss.item()>9999):
+                    print(loss,prior_logprob,log_det)
+
                 # optimize
                 optimizer.zero_grad()
                 loss.backward()
@@ -177,6 +180,9 @@ class MACAW:
                     _, prior_logprob, log_det = self.model(x)
                     loss = - torch.sum(prior_logprob + log_det)
                     val_loss += loss.item()
+
+                    if loss.item()>9999:
+                        print(loss, prior_logprob, log_det)
 
             train_loss /= len(train_loader)
             val_loss /= len(valid_loader)
