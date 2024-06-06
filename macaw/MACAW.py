@@ -141,8 +141,8 @@ class MACAW:
             scheduler = None
 
         # Early stopping parameters
-        patience = 1
-        min_delta = 1
+        patience = 10
+        min_delta = 50
         best_val_loss = float('inf')
         epochs_no_improve = 0
 
