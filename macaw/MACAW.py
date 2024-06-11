@@ -112,7 +112,7 @@ class MACAW:
 
         return loss_vals
 
-    def fit_with_priors(self, train_ds, val_ds, edges, priors):
+    def fit_with_priors(self, train_ds, val_ds, edges, priors, e):
         """
         Assuming data columns follow the causal ordering, we fit the associated 1D-Equations.
 
@@ -145,6 +145,8 @@ class MACAW:
         min_delta = 50
         best_val_loss = float('inf')
         epochs_no_improve = 0
+
+        last_lr=999
 
         loss_vals_train = []
         loss_vals_val = []
@@ -188,6 +190,11 @@ class MACAW:
             val_loss /= len(valid_loader)
 
             curr_lr = optimizer.param_groups[0]['lr']
+            # print(f'Epoch {e + 1}/{self.epochs} - Training Loss: {train_loss:.3f}, Val Loss: {val_loss:.3f}, LR: {curr_lr:.6f}')
+
+            if curr_lr < last_lr:
+                last_lr = curr_lr
+                print(e, last_lr)
 
             pbar.set_description(
                 f'Epoch {e + 1}/{self.epochs} - Training Loss: {train_loss:.3f}, Val Loss: {val_loss:.3f}, LR: {curr_lr:.6f}')
