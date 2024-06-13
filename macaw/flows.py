@@ -15,14 +15,21 @@ class Flow(nn.Module):
         self.device = device
 
     def forward(self, x):
+        # # here we see that we are evaluating all of z in parallel, so density estimation will be fast
+        # st = self.net(x)
+        # s, t = st.split(self.dim, dim=1)
+        # s = torch.nan_to_num(s, nan=0.0, posinf=10, neginf=-10)
+        # t = torch.nan_to_num(t, nan=0.0, posinf=1000, neginf=-1000)
+        #
+        # z = x * torch.exp(s) + t
+        #
+        # log_det = torch.sum(s, dim=1)
+        # return z, log_det
         # here we see that we are evaluating all of z in parallel, so density estimation will be fast
-        st = self.net(x)
+        st = torch.nan_to_num(self.net(x), nan=0.0, posinf=1e3, neginf=-1e3)
         s, t = st.split(self.dim, dim=1)
-        s = torch.nan_to_num(s, nan=0.0, posinf=10, neginf=-10)
-        t = torch.nan_to_num(t, nan=0.0, posinf=1000, neginf=-1000)
 
         z = x * torch.exp(s) + t
-
         log_det = torch.sum(s, dim=1)
         return z, log_det
 
@@ -31,11 +38,15 @@ class Flow(nn.Module):
         x = torch.zeros_like(z).to(self.device)
         log_det = torch.zeros(z.size(0)).to(self.device)
         for i in range(self.dim):
-            st = self.net(x)
+            # st = self.net(x)
+            # s, t = st.split(self.dim, dim=1)
+            # s = torch.nan_to_num(s, nan=0.0, posinf=10, neginf=-10)
+            # t = torch.nan_to_num(t, nan=0.0, posinf=1000, neginf=-1000)
+            #
+            # x[:, i] = (z[:, i] - t[:, i]) * torch.exp(-s[:, i])
+            # log_det += -s[:, i]
+            st = torch.nan_to_num(self.net(x), nan=0.0, posinf=1e3, neginf=-1e3)
             s, t = st.split(self.dim, dim=1)
-            s = torch.nan_to_num(s, nan=0.0, posinf=10, neginf=-10)
-            t = torch.nan_to_num(t, nan=0.0, posinf=1000, neginf=-1000)
-
             x[:, i] = (z[:, i] - t[:, i]) * torch.exp(-s[:, i])
             log_det += -s[:, i]
         return x, log_det
