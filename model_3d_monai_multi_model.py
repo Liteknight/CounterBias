@@ -16,7 +16,7 @@ import torchvision
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 import monai
-from monai.data import ImageDataset, DataLoader
+from monai.data import ImageDataset, DataLoader, ITKReader
 from monai.transforms import EnsureChannelFirst, Compose, RandRotate90, Resize, ScaleIntensity, NormalizeIntensity, ToTensor
 import pickle
 import argparse
@@ -39,7 +39,7 @@ def main():
 
     # use parser if running from bash script
     parser = argparse.ArgumentParser()
-    parser.add_argument('--exp_name', type=str, default='no_bias', help='experiment name')
+    parser.add_argument('--exp_name', type=str, default='far_bias', help='experiment name')
     parser.add_argument('--model_name', type=str, default='resnet', help='Name of the model to use: densenet, resnet, efficientnet, etc.')
     parser.add_argument('--seed', type=int, help='seed for reproducibility', default=1)
 
@@ -76,21 +76,21 @@ def main():
     df_train = pd.read_csv(os.path.join(home_dir, "splits/train.csv"))
     df_val = pd.read_csv(os.path.join(home_dir, "splits/val.csv"))
 
-    train_fpaths = [os.path.join(working_dir, "train", filename.replace(".nii.gz", ".tiff")) for filename in df_train['filename']]
-    train_class_label = df_train['class_label']
+    train_fpaths = [os.path.join(working_dir, "train", filename) for filename in df_train['filename']]
+    train_class_label = df_train['bias_label']
 
-    val_fpaths = [os.path.join(working_dir, "val", filename.replace(".nii.gz", ".tiff")) for filename in df_val['filename']]
-    val_class_label = df_val['class_label']
+    val_fpaths = [os.path.join(working_dir, "val", filename) for filename in df_val['filename']]
+    val_class_label = df_val['bias_label']
 
     # Define transforms
     transforms = Compose([torchvision.transforms.CenterCrop(180), EnsureChannelFirst(), NormalizeIntensity(), ToTensor()])
 
     # create a training data loader - include padding
-    train_ds = ImageDataset(image_files=train_fpaths, labels=train_class_label, transform=transforms, reader="ITKReader")
+    train_ds = ImageDataset(image_files=train_fpaths, labels=train_class_label, transform=transforms, reader="PILReader")
     train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True, num_workers=2,worker_init_fn=seed_worker, generator=g, pin_memory=torch.cuda.is_available(), collate_fn=pad_list_data_collate)
 
     # create a validation data loader - include padding
-    val_ds = ImageDataset(image_files=val_fpaths, labels=val_class_label, transform=transforms, reader="ITKReader")
+    val_ds = ImageDataset(image_files=val_fpaths, labels=val_class_label, transform=transforms, reader="PILReader")
     val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False, worker_init_fn=seed_worker, generator=g,num_workers=N_WORKERS, pin_memory=torch.cuda.is_available(), collate_fn=pad_list_data_collate)
 
 

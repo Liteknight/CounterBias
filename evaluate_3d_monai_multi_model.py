@@ -21,7 +21,7 @@ from tqdm import tqdm
 
 from SFCN import SFCNModel
 # import config_file as cfg
-from utils import model_eval, compute_metrics, plot_roc_curves
+from utils.utils import model_eval, compute_metrics, plot_roc_curves
 
 BATCH_SIZE = 16
 N_WORKERS = 0
@@ -41,7 +41,7 @@ def main():
 
     # use parser if running from bash script
     parser = argparse.ArgumentParser()
-    parser.add_argument('--exp_name', type=str, default='no_bias', help='experiment name')
+    parser.add_argument('--exp_name', type=str, default='far_bias', help='experiment name')
     parser.add_argument('--model_name', type=str, default='densenet', help='Name of the model to use: densenet, resnet, efficientnet, etc.')
 
     args = parser.parse_args()
@@ -64,13 +64,13 @@ def main():
     df_test = pd.read_csv(os.path.join(home_dir, "splits/test.csv"))
 
     test_fpaths = [os.path.join(working_dir, "test", filename.replace(".nii.gz", ".tiff")) for filename in df_test['filename']]
-    test_class_label = df_test['class_label']
+    test_class_label = df_test['bias_label']
 
     # Define transforms for image
     transforms = Compose([torchvision.transforms.CenterCrop(180), EnsureChannelFirst(), NormalizeIntensity(), ToTensor()])
 
     # Define image dataset
-    test_ds = ImageDataset(image_files=test_fpaths, labels=test_class_label, transform=transforms, image_only=True, reader="ITKReader")
+    test_ds = ImageDataset(image_files=test_fpaths, labels=test_class_label, transform=transforms, image_only=True, reader="PILReader")
 
     # create a validation data loader
     test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, num_workers=4, generator=g, pin_memory=torch.cuda.is_available())
