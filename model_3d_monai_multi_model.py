@@ -145,7 +145,7 @@ def main():
             optimizer.step()
             epoch_loss += loss.item()
             epoch_len = len(train_ds) // train_loader.batch_size
-            print(f"{step}/{epoch_len}, train_loss: {loss.item():.4f}")
+            # print(f"{step}/{epoch_len}, train_loss: {loss.item():.4f}")
             # writer.add_scalar("train_loss", loss.item(), epoch_len * epoch + step)
         epoch_loss /= step
         epoch_loss_values.append(epoch_loss)
@@ -182,6 +182,8 @@ def main():
                     val_epoch_loss += val_loss.item()# update running validation loss
                     val_epoch_len = len(val_ds) // val_loader.batch_size
 
+                    # print(val_outputs)
+
                     # Compute accuracy for the current batch
                     val_predictions = (val_outputs > 0.5).float()  # Assuming sigmoid activation function for binary classification
                     val_correct_predictions = (val_predictions == val_labels).sum().item()
@@ -189,7 +191,7 @@ def main():
                     total_predictions_val += val_labels.numel()
                     val_batch_accuracy = val_correct_predictions / val_labels.numel()
 
-                    print(f"{val_step}/{val_epoch_len}, val_loss: {val_loss.item():.4f}, batch_accuracy: {val_batch_accuracy:.4f}")
+                    # print(f"{val_step}/{val_epoch_len}, val_loss: {val_loss.item():.4f}, batch_accuracy: {val_batch_accuracy:.4f}")
 
                 val_epoch_loss /= val_step
                 val_epoch_loss_values.append(val_epoch_loss)
