@@ -101,17 +101,17 @@ def main():
     df = model_eval(df_test, all_preds)
 
     #create one-hot encoded columns for TP, TN, FP, FN
-    df['TP'] = df.apply(lambda row: 1 if ((row['ground_truth'] == 1) & (row['preds']==1)) else 0, axis=1)
-    df['TN'] = df.apply(lambda row: 1 if ((row['ground_truth']== 0) & (row['preds'] ==0)) else 0, axis=1)
-    df['FP'] = df.apply(lambda row: 1 if ((row['ground_truth'] == 0) & (row['preds'] ==1)) else 0, axis=1)
-    df['FN'] = df.apply(lambda row: 1 if ((row['ground_truth'] == 1) & (row['preds'] ==0)) else 0, axis=1)
+    df['TP'] = df.apply(lambda row: 1 if ((row['bias_label'] == 1) & (row['preds']==1)) else 0, axis=1)
+    df['TN'] = df.apply(lambda row: 1 if ((row['bias_label']== 0) & (row['preds'] ==0)) else 0, axis=1)
+    df['FP'] = df.apply(lambda row: 1 if ((row['bias_label'] == 0) & (row['preds'] ==1)) else 0, axis=1)
+    df['FN'] = df.apply(lambda row: 1 if ((row['bias_label'] == 1) & (row['preds'] ==0)) else 0, axis=1)
 
     df.to_csv(working_dir + 'preds_' + exp_name + '.csv') #save file with predictions
 
 
     # Compute metrics
-    df_B1 = df.loc[df['bias_label']==1]
-    df_B0 = df.loc[df['bias_label']==0]
+    df_B1 = df.loc[df['ground_truth']==1]
+    df_B0 = df.loc[df['ground_truth']==0]
 
     #generate file with performance metrics
     metrics = compute_metrics(df, save_dir=working_dir, label='Agg')
@@ -122,8 +122,8 @@ def main():
     metrics_df = metrics_df.set_index('metrics')
 
     metrics_df['Aggregate'] = metrics
-    metrics_df['bias_label_1'] = metrics_B1
-    metrics_df['bias_label_0'] = metrics_B0
+    metrics_df['disease_1'] = metrics_B1
+    metrics_df['disease_0'] = metrics_B0
     metrics_df.to_csv(working_dir + 'metrics_' + exp_name + '.csv')
 
 

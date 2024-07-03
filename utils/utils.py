@@ -102,7 +102,8 @@ def model_eval(df_test, all_preds):
 
 
 def compute_metrics(df, save_dir, label, plot=True):
-    y_test = df['ground_truth'].values
+    # y_test = df['ground_truth'].values
+    y_test = df['bias_label'].values
     y_pred = df['preds'].values
     y_pred_raw = df['preds_raw_1'].values
 
