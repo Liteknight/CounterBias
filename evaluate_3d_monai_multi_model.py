@@ -20,6 +20,7 @@ import argparse
 from tqdm import tqdm
 
 from SFCN import SFCNModel
+from utils.customTransforms import ToFloatUKBB
 # import config_file as cfg
 from utils.utils import model_eval, compute_metrics, plot_roc_curves
 
@@ -63,11 +64,11 @@ def main():
 
     df_test = pd.read_csv(os.path.join(home_dir, "splits/test.csv"))
 
-    test_fpaths = [os.path.join(working_dir, "test", filename.replace(".nii.gz", ".tiff")) for filename in df_test['filename']]
+    test_fpaths = [os.path.join(working_dir, "test", filename) for filename in df_test['filename']]
     test_class_label = df_test['bias_label']
 
     # Define transforms for image
-    transforms = Compose([torchvision.transforms.CenterCrop(180), EnsureChannelFirst(), NormalizeIntensity(), ToTensor()])
+    transforms = Compose([torchvision.transforms.CenterCrop(180), EnsureChannelFirst(), ToFloatUKBB(), ToTensor()])
 
     # Define image dataset
     test_ds = ImageDataset(image_files=test_fpaths, labels=test_class_label, transform=transforms, image_only=True, reader="PILReader")
@@ -89,6 +90,8 @@ def main():
 
         for idx, test_data in tqdm(enumerate(test_loader), total=len(test_loader)):
             test_images = test_data[0].to(device)
+
+            print(test_data[0][0].max(), test_data[0][0].min())
 
             # Get model's probability outputs
             outputs = model(test_images)

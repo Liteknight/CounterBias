@@ -27,6 +27,8 @@ import matplotlib.pyplot as plt
 # from torchsummary import summary
 
 from SFCN import SFCNModel
+from utils.customTransforms import ToFloatUKBB
+
 
 def seed_worker(worker_id):
     worker_seed = torch.initial_seed() % 2**32
@@ -83,7 +85,7 @@ def main():
     val_class_label = df_val['bias_label']
 
     # Define transforms
-    transforms = Compose([torchvision.transforms.CenterCrop(180), EnsureChannelFirst(), NormalizeIntensity(), ToTensor()])
+    transforms = Compose([torchvision.transforms.CenterCrop(180), EnsureChannelFirst(), ToFloatUKBB(), ToTensor()])
 
     # create a training data loader - include padding
     train_ds = ImageDataset(image_files=train_fpaths, labels=train_class_label, transform=transforms, reader="PILReader")
