@@ -1,0 +1,6 @@
+metrics,Aggregate,disease_1,disease_0
+Acc,1.0,1.0,1.0
+Sens,1.0,1.0,1.0
+Spec,1.0,1.0,1.0
+FPR,0.0,0.0,0.0
+AUROC,1.0,1.0,1.0
