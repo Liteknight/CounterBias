@@ -1,10 +1,10 @@
 import SimpleITK as sitk
 import os
 
-dir = "./exp140/"
-split = "val/"
+dir = "./exp199/"
+split = "train/"
 
-output_dir = "./far_bias/" + split
+output_dir = "./moin_bias/" + split
 
 # Create the output directory if it doesn't exist
 if not os.path.exists(output_dir):
@@ -18,6 +18,11 @@ for file in os.listdir(dir + split):
 
             # Extract a slice along the z-axis at index 75
             image_slice = image[:, :, 75]
+
+            # Check the pixel type and convert to float32 if not supported
+            if image_slice.GetPixelID() not in [sitk.sitkUInt8, sitk.sitkInt8, sitk.sitkUInt16, sitk.sitkInt16,
+                                                sitk.sitkFloat32]:
+                image_slice = sitk.Cast(image_slice, sitk.sitkFloat32)
 
             # Construct the output file path with ".tif" extension
             output_file_path = os.path.join(output_dir, file.replace(".nii.gz", ".tiff"))
