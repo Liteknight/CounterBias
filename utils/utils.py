@@ -113,6 +113,7 @@ def compute_metrics(df, save_dir, label, plot=True):
     cm_df = pd.DataFrame(cm,
             index = ['ND','D'],
             columns = ['ND','D'])
+
     if plot:
         #Plotting the confusion matrix
         plt.figure(figsize=(10,8))

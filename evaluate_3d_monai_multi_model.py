@@ -42,7 +42,7 @@ def main():
 
     # use parser if running from bash script
     parser = argparse.ArgumentParser()
-    parser.add_argument('--exp_name', type=str, default='moin_bias', help='experiment name')
+    parser.add_argument('--exp_name', type=str, default='far_bias', help='experiment name')
     parser.add_argument('--model_name', type=str, default='densenet', help='Name of the model to use: densenet, resnet, efficientnet, etc.')
 
     args = parser.parse_args()
@@ -62,10 +62,13 @@ def main():
     working_dir = home_dir + exp_name + '/'
 
 
-    df_test = pd.read_csv(os.path.join(home_dir, "splits2/exp199/test.csv"))
+    df_test = pd.read_csv(os.path.join(home_dir, "splits/test.csv"))
+    # test_fpaths = [os.path.join(working_dir, "test", filename.replace("nii.gz", "tiff")) for filename in df_test['filename']]
+    test_fpaths = [os.path.join("./data/cfs", filename.replace("nii.gz", "tiff")) for filename in
+                   df_test['filename'][:248]]
 
-    test_fpaths = [os.path.join(working_dir, "test", filename.replace("nii.gz", "tiff")) for filename in df_test['filename']]
-    test_class_label = df_test['morph_bias']
+    # test_class_label = df_test['bias_label']
+    test_class_label = np.zeros(len(test_fpaths))
 
     # Define transforms for image
     transforms = Compose([torchvision.transforms.CenterCrop(180), EnsureChannelFirst(), ToFloatUKBB(), ToTensor()])
@@ -91,7 +94,7 @@ def main():
         for idx, test_data in tqdm(enumerate(test_loader), total=len(test_loader)):
             test_images = test_data[0].to(device)
 
-            print(test_data[0][0].max(), test_data[0][0].min())
+            # print(test_data[0][0].max(), test_data[0][0].min())
 
             # Get model's probability outputs
             outputs = model(test_images)
@@ -100,8 +103,10 @@ def main():
 
             # saver.save_batch(torch.tensor(test_outputs).to(device), test_images.meta)
 
+    print(len(all_preds))
+
     # concat predictions to test dataframe
-    df = model_eval(df_test, all_preds)
+    df = model_eval(df_test[:248], all_preds)
 
     #create one-hot encoded columns for TP, TN, FP, FN
     df['TP'] = df.apply(lambda row: 1 if ((row['bias_label'] == 1) & (row['preds'] ==1)) else 0, axis=1)
