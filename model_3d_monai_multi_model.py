@@ -41,7 +41,7 @@ def main():
 
     # use parser if running from bash script
     parser = argparse.ArgumentParser()
-    parser.add_argument('--exp_name', type=str, default='far_bias', help='experiment name')
+    parser.add_argument('--exp_name', type=str, default='moin_bias', help='experiment name')
     parser.add_argument('--model_name', type=str, default='resnet', help='Name of the model to use: densenet, resnet, efficientnet, etc.')
     parser.add_argument('--seed', type=int, help='seed for reproducibility', default=1)
 
@@ -75,14 +75,14 @@ def main():
     home_dir = './'
     working_dir = home_dir + exp_name + '/'
 
-    df_train = pd.read_csv(os.path.join(home_dir, "splits/train.csv"))
-    df_val = pd.read_csv(os.path.join(home_dir, "splits/val.csv"))
+    df_train = pd.read_csv(os.path.join(home_dir, "splits2/exp199/train.csv"))
+    df_val = pd.read_csv(os.path.join(home_dir, "splits2/exp199/val.csv"))
 
     train_fpaths = [os.path.join(working_dir, "train", filename.replace("nii.gz", "tiff")) for filename in df_train['filename']]
-    train_class_label = df_train['bias_label']
+    train_class_label = df_train['intensity_bias']
 
     val_fpaths = [os.path.join(working_dir, "val", filename.replace("nii.gz", "tiff")) for filename in df_val['filename']]
-    val_class_label = df_val['bias_label']
+    val_class_label = df_val['intensity_bias']
 
     # Define transforms
     transforms = Compose([torchvision.transforms.CenterCrop(180), EnsureChannelFirst(), ToFloatUKBB(), ToTensor()])

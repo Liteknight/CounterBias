@@ -14,9 +14,12 @@ import torch
 import random
 import monai
 import torchvision
+from matplotlib import pyplot as plt
 from monai.data import  ImageDataset, DataLoader
 from monai.transforms import EnsureChannelFirst, Compose, Resize, ScaleIntensity, NormalizeIntensity, ToTensor
 import argparse
+
+from monai.visualize import SmoothGrad
 from tqdm import tqdm
 
 from SFCN import SFCNModel
@@ -42,7 +45,7 @@ def main():
 
     # use parser if running from bash script
     parser = argparse.ArgumentParser()
-    parser.add_argument('--exp_name', type=str, default='far_bias', help='experiment name')
+    parser.add_argument('--exp_name', type=str, default='moin_bias', help='experiment name')
     parser.add_argument('--model_name', type=str, default='densenet', help='Name of the model to use: densenet, resnet, efficientnet, etc.')
 
     args = parser.parse_args()
@@ -62,13 +65,13 @@ def main():
     working_dir = home_dir + exp_name + '/'
 
 
-    df_test = pd.read_csv(os.path.join(home_dir, "splits/test.csv"))
-    # test_fpaths = [os.path.join(working_dir, "test", filename.replace("nii.gz", "tiff")) for filename in df_test['filename']]
-    test_fpaths = [os.path.join("./data/cfs", filename.replace("nii.gz", "tiff")) for filename in
-                   df_test['filename'][:248]]
+    df_test = pd.read_csv(os.path.join(home_dir, "splits2/exp199/test.csv"))
+    test_fpaths = [os.path.join(working_dir, "test", filename.replace("nii.gz", "tiff")) for filename in df_test['filename']]
+    # test_fpaths = [os.path.join("./data/cfs", filename.replace("nii.gz", "tiff")) for filename in
+    #                df_test['filename'][:248]]
 
-    # test_class_label = df_test['bias_label']
-    test_class_label = np.zeros(len(test_fpaths))
+    test_class_label = df_test['intensity_bias']
+    # test_class_label = np.zeros(len(test_fpaths))
 
     # Define transforms for image
     transforms = Compose([torchvision.transforms.CenterCrop(180), EnsureChannelFirst(), ToFloatUKBB(), ToTensor()])
@@ -106,7 +109,35 @@ def main():
     print(len(all_preds))
 
     # concat predictions to test dataframe
-    df = model_eval(df_test[:248], all_preds)
+    df = model_eval(df_test, all_preds)
+
+    smooth_grad = SmoothGrad(model)
+
+    for idx, batch_data in enumerate(test_loader):
+        inputs, labels = batch_data[0].to(device), batch_data[1].to(device)
+
+        for i in range(inputs.size(0)):
+            input_image = inputs[i].unsqueeze(0)  # Add batch dimension
+            input_image.requires_grad_()
+
+            # Apply SmoothGrad
+            saliency_map = smooth_grad(input_image)
+
+            fig, ax = plt.subplots(1, 2)
+            ax[0].imshow(input_image[0].cpu().permute(1, 2, 0), cmap='gray')
+            ax[0].set_title('Input Image')
+            ax[0].axis('off')
+
+            ax[1].imshow(saliency_map[0].cpu().numpy(), cmap='hot')
+            ax[1].set_title('SmoothGrad Saliency Map')
+            ax[1].axis('off')
+
+            plt.tight_layout()
+            plt.savefig(os.path.join("./data/saliency/", f'saliency_map_{idx}_{i}.png'))
+            plt.close()
+
+        if idx == 4:  # Visualize saliency maps for the first 5 batches
+            break
 
     #create one-hot encoded columns for TP, TN, FP, FN
     df['TP'] = df.apply(lambda row: 1 if ((row['bias_label'] == 1) & (row['preds'] ==1)) else 0, axis=1)
