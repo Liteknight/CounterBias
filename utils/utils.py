@@ -11,6 +11,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import monai
+import torch
 from sklearn.metrics import confusion_matrix, accuracy_score, roc_auc_score, roc_curve, auc
 # import config_file as cfg
 # from SFCN_Class import SFCNModelMONAIClassification, SFCN
@@ -87,17 +88,24 @@ from sklearn.metrics import confusion_matrix, accuracy_score, roc_auc_score, roc
 
 def model_eval(df_test, all_preds):
     '''
-    append softmax model outputs to corresponding data in test dataframe
+    Append model outputs to corresponding data in the test dataframe.
     '''
     df = df_test.copy()
-    y_pred_raw = np.vstack(all_preds) #turn list of arrays into a stacked array
-    y_pred = (y_pred_raw > 0.5).astype(int).reshape(-1, 1)
+    y_pred_raw = np.vstack(all_preds)  # turn list of arrays into a stacked array
+    y_pred = (torch.tensor(y_pred_raw) > 0.5).long()  # thresholding based on sigmoid output
 
-    print("Shape of y_pred_raw:", y_pred_raw.shape)
+    # print("Raw model outputs:")
+    # print(y_pred_raw)
+    # print(y_pred)
+    #
+    # print("Shape of y_pred_raw:", y_pred_raw.shape)
+    # print("Shape of y_pred:", y_pred.shape)
 
-    df = df.rename(columns={'class_label': 'ground_truth'})
-    df['preds'] = y_pred
-    df['preds_raw_1'] = y_pred_raw[:,0].astype(float)
+    df = df.rename(columns={'class_label': 'disease_label'})
+    df['preds'] = y_pred.argmax(dim=1).numpy()  # Choose the index of the max logit as the predicted class
+    # df['preds_raw_0'] = y_pred_raw[:, 0].astype(float)  # Raw output for class 0
+    df['preds_raw'] = y_pred_raw[:, 1].astype(float)  # Raw output for class 1
+
     return df
 
 

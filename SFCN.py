@@ -51,11 +51,11 @@ class SFCNModel(nn.Module):
         self.avgpool1 = nn.AvgPool2d(kernel_size=1)
         self.dropout1 = nn.Dropout(.5)
         self.flat1 = nn.Flatten()
-        self.linear1 = nn.Linear(1600, 1)
+        self.linear1 = nn.Linear(1600, 2)
 
         self.sigmoid = nn.Sigmoid()
 
-        self.block7 = nn.Sequential(self.avgpool1, self.dropout1, self.flat1, self.linear1, self.sigmoid)
+        self.block7 = nn.Sequential(self.avgpool1, self.dropout1, self.flat1, self.linear1)
     
     def forward(self, x):
 #        print(x.shape)
@@ -66,6 +66,8 @@ class SFCNModel(nn.Module):
         x = self.block5(x)
         x = self.block6(x)
         x = self.block7(x)
+
+        x = self.sigmoid(x)
 
         # return torch.squeeze(x,1) # change to 2?
         return torch.squeeze(x)

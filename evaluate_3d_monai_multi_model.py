@@ -34,6 +34,14 @@ MAX_IMAGES = -1
 LR = 0.0001
 PATIENCE = 5
 
+from sklearn.preprocessing import OneHotEncoder
+
+# Function to convert labels to one-hot encoding
+def one_hot_encode(labels):
+    encoder = OneHotEncoder(sparse=False, categories='auto')
+    labels = labels.reshape(-1, 1)
+    return encoder.fit_transform(labels)
+
 def seed_worker(worker_id):
     worker_seed = torch.initial_seed() % 2**32
     np.random.seed(worker_seed)
@@ -70,7 +78,7 @@ def main():
     # test_fpaths = [os.path.join("./data/cfs", filename.replace("nii.gz", "tiff")) for filename in
     #                df_test['filename'][:248]]
 
-    test_class_label = df_test['intensity_bias']
+    test_class_label = one_hot_encode(df_test['intensity_bias'].values)
     # test_class_label = np.zeros(len(test_fpaths))
 
     # Define transforms for image
@@ -110,6 +118,7 @@ def main():
 
     # concat predictions to test dataframe
     df = model_eval(df_test, all_preds)
+    df.to_csv(working_dir + 'preds_' + exp_name + '.csv')  # save file with predictions
 
     smooth_grad = SmoothGrad(model)
 
@@ -121,6 +130,11 @@ def main():
             input_image.requires_grad_()
 
             # Apply SmoothGrad
+            # print(input_image)
+            print(input_image.shape)
+            print(model(input_image))
+            print(model(input_image).shape)
+
             saliency_map = smooth_grad(input_image)
 
             fig, ax = plt.subplots(1, 2)
@@ -145,7 +159,7 @@ def main():
     df['FP'] = df.apply(lambda row: 1 if ((row['bias_label'] == 0) & (row['preds'] ==1)) else 0, axis=1)
     df['FN'] = df.apply(lambda row: 1 if ((row['bias_label'] == 1) & (row['preds'] ==0)) else 0, axis=1)
 
-    df.to_csv(working_dir + 'preds_' + exp_name + '.csv') #save file with predictions
+    # df.to_csv(working_dir + 'preds_' + exp_name + '.csv') #save file with predictions
 
 
     # Compute metrics

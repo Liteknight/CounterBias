@@ -17,7 +17,8 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 import monai
 from monai.data import ImageDataset, DataLoader, ITKReader
-from monai.transforms import EnsureChannelFirst, Compose, RandRotate90, Resize, ScaleIntensity, NormalizeIntensity, ToTensor
+from monai.transforms import EnsureChannelFirst, Compose, RandRotate90, Resize, ScaleIntensity, NormalizeIntensity, \
+    ToTensor
 import pickle
 import argparse
 from monai.data.utils import pad_list_data_collate
@@ -29,11 +30,21 @@ import matplotlib.pyplot as plt
 from SFCN import SFCNModel
 from utils.customTransforms import ToFloatUKBB
 
+from sklearn.preprocessing import OneHotEncoder
+
+
+# Function to convert labels to one-hot encoding
+def one_hot_encode(labels):
+    encoder = OneHotEncoder(sparse=False, categories='auto')
+    labels = labels.reshape(-1, 1)
+    return encoder.fit_transform(labels)
+
 
 def seed_worker(worker_id):
-    worker_seed = torch.initial_seed() % 2**32
+    worker_seed = torch.initial_seed() % 2 ** 32
     np.random.seed(worker_seed)
     random.seed(worker_seed)
+
 
 def main():
     monai.config.print_config()
@@ -42,7 +53,8 @@ def main():
     # use parser if running from bash script
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', type=str, default='moin_bias', help='experiment name')
-    parser.add_argument('--model_name', type=str, default='resnet', help='Name of the model to use: densenet, resnet, efficientnet, etc.')
+    parser.add_argument('--model_name', type=str, default='resnet',
+                        help='Name of the model to use: densenet, resnet, efficientnet, etc.')
     parser.add_argument('--seed', type=int, help='seed for reproducibility', default=1)
 
     args = parser.parse_args()
@@ -55,7 +67,6 @@ def main():
     MAX_IMAGES = -1
     LR = 0.0001
     PATIENCE = 5
-
 
     # exp_name = 'exp_mini_test'
     # model_name = 'cnn3d'
@@ -71,30 +82,34 @@ def main():
     g = torch.Generator()
     g.manual_seed(seed)
 
-
     home_dir = './'
     working_dir = home_dir + exp_name + '/'
 
     df_train = pd.read_csv(os.path.join(home_dir, "splits2/exp199/train.csv"))
     df_val = pd.read_csv(os.path.join(home_dir, "splits2/exp199/val.csv"))
 
-    train_fpaths = [os.path.join(working_dir, "train", filename.replace("nii.gz", "tiff")) for filename in df_train['filename']]
-    train_class_label = df_train['intensity_bias']
+    train_fpaths = [os.path.join(working_dir, "train", filename.replace("nii.gz", "tiff")) for filename in
+                    df_train['filename']]
+    train_class_label = one_hot_encode(df_train['intensity_bias'].values)
 
-    val_fpaths = [os.path.join(working_dir, "val", filename.replace("nii.gz", "tiff")) for filename in df_val['filename']]
-    val_class_label = df_val['intensity_bias']
+    val_fpaths = [os.path.join(working_dir, "val", filename.replace("nii.gz", "tiff")) for filename in
+                  df_val['filename']]
+    val_class_label = one_hot_encode(df_val['intensity_bias'].values)
 
     # Define transforms
     transforms = Compose([torchvision.transforms.CenterCrop(180), EnsureChannelFirst(), ToFloatUKBB(), ToTensor()])
 
     # create a training data loader - include padding
-    train_ds = ImageDataset(image_files=train_fpaths, labels=train_class_label, transform=transforms, reader="PILReader")
-    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True, num_workers=2,worker_init_fn=seed_worker, generator=g, pin_memory=torch.cuda.is_available(), collate_fn=pad_list_data_collate)
+    train_ds = ImageDataset(image_files=train_fpaths, labels=train_class_label, transform=transforms,
+                            reader="PILReader")
+    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True, num_workers=2, worker_init_fn=seed_worker,
+                              generator=g, pin_memory=torch.cuda.is_available(), collate_fn=pad_list_data_collate)
 
     # create a validation data loader - include padding
     val_ds = ImageDataset(image_files=val_fpaths, labels=val_class_label, transform=transforms, reader="PILReader")
-    val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False, worker_init_fn=seed_worker, generator=g,num_workers=N_WORKERS, pin_memory=torch.cuda.is_available(), collate_fn=pad_list_data_collate)
-
+    val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False, worker_init_fn=seed_worker, generator=g,
+                            num_workers=N_WORKERS, pin_memory=torch.cuda.is_available(),
+                            collate_fn=pad_list_data_collate)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = SFCNModel().to(device)
@@ -140,6 +155,7 @@ def main():
                 labels = labels
 
             # print(labels)
+            # print(outputs)
 
             loss = loss_function(outputs, labels.float())
 
@@ -179,9 +195,9 @@ def main():
                         val_labels = val_labels
 
                     #early stopping based on val loss
-                    val_outputs = model(val_images) #fwd pass
-                    val_loss = loss_function(val_outputs, val_labels.float()) # calculate the loss
-                    val_epoch_loss += val_loss.item()# update running validation loss
+                    val_outputs = model(val_images)  #fwd pass
+                    val_loss = loss_function(val_outputs, val_labels.float())  # calculate the loss
+                    val_epoch_loss += val_loss.item()  # update running validation loss
                     val_epoch_len = len(val_ds) // val_loader.batch_size
 
                     # print(val_outputs)
@@ -201,7 +217,8 @@ def main():
                 val_epoch_accuracy = total_correct_predictions_val / total_predictions_val
                 val_epoch_accuracy_values.append(val_epoch_accuracy)
 
-                print(f"epoch {epoch + 1} average val loss: {val_epoch_loss:.4f}, epoch_accuracy: {val_epoch_accuracy:.4f}")
+                print(
+                    f"epoch {epoch + 1} average val loss: {val_epoch_loss:.4f}, epoch_accuracy: {val_epoch_accuracy:.4f}")
 
                 if val_epoch_loss < best_val_loss:
                     best_val_loss = val_epoch_loss
@@ -215,7 +232,8 @@ def main():
                     patience_counter += 1  # increment the counter when no improvement is found
 
                 if patience_counter >= PATIENCE:
-                    print(f"Early stopping at epoch {epoch + 1}, best val loss: {best_val_loss:.4f} at epoch: {best_metric_epoch}")
+                    print(
+                        f"Early stopping at epoch {epoch + 1}, best val loss: {best_val_loss:.4f} at epoch: {best_metric_epoch}")
                     break  # exit the loop when the patience limit is reached
 
                 print(
@@ -224,7 +242,6 @@ def main():
                     )
                 )
                 # writer.add_scalar("val_loss", val_epoch_loss, epoch + 1)
-
 
     # Save the last model
     torch.save(model.state_dict(), working_dir + model_name + r"_last_model.pth")
@@ -236,7 +253,8 @@ def main():
 
     # Subplot for Epoch Loss vs. Epoch
     plt.plot(range(1, len(epoch_loss_values) + 1), epoch_loss_values, '-o', color='red', label="Epoch Loss")
-    plt.plot(range(1, len(val_epoch_loss_values) + 1), val_epoch_loss_values, '-o', color='blue', label="Validation Epoch Loss")
+    plt.plot(range(1, len(val_epoch_loss_values) + 1), val_epoch_loss_values, '-o', color='blue',
+             label="Validation Epoch Loss")
     plt.title("Epoch Loss vs. Epoch")
     plt.xlabel("Epoch")
     plt.ylabel("Epoch Loss")
@@ -247,6 +265,7 @@ def main():
     plt.savefig(working_dir + "epoch_loss_plot.png")
 
     #plt.show()
+
 
 if __name__ == "__main__":
     main()
