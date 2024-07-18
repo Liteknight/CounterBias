@@ -133,7 +133,7 @@ class EmmaDataset(Dataset):
         if self.transform:
             img = self.transform(img)
 
-        return self.df.iloc[idx]['class_label'], self.df.iloc[idx]['bias_label'], img, self.df.iloc[idx]['filename']
+        return self.df.iloc[idx]['class_label'], self.df.iloc[idx]['morph_bias'], img, self.df.iloc[idx]['filename']
 
 
 class UKBBT13DDataset(Dataset):

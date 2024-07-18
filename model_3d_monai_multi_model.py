@@ -84,7 +84,7 @@ def main():
     g.manual_seed(seed)
 
     home_dir = './'
-    working_dir = home_dir + exp_name + '/SFCN/'
+    working_dir = home_dir + exp_name #+ '/SFCN/'
 
     df_train = pd.read_csv(os.path.join(home_dir, "splits2/exp199/train.csv"))
     df_val = pd.read_csv(os.path.join(home_dir, "splits2/exp199/val.csv"))

@@ -19,7 +19,7 @@ from monai.data import  ImageDataset, DataLoader
 from monai.transforms import EnsureChannelFirst, Compose, Resize, ScaleIntensity, NormalizeIntensity, ToTensor
 import argparse
 
-from monai.visualize import SmoothGrad
+from monai.visualize import SmoothGrad, GradCAM
 from tqdm import tqdm
 
 from SFCN import SFCNModel
@@ -70,7 +70,7 @@ def main():
 
 
     home_dir = './'
-    working_dir = home_dir + exp_name + '/SFCN/'
+    working_dir = home_dir + exp_name #+ '/SFCN/'
 
 
     df_test = pd.read_csv(os.path.join(home_dir, "splits2/exp199/test.csv"))
@@ -134,8 +134,9 @@ def main():
             print(input_image.shape)
             print(model(input_image))
             print(model(input_image).shape)
+            # print(model(inputs))
 
-            saliency_map = smooth_grad(input_image)
+            saliency_map = smooth_grad(input_image, class_idx=0)
 
             fig, ax = plt.subplots(1, 2)
             ax[0].imshow(input_image[0].cpu().permute(1, 2, 0), cmap='gray')
