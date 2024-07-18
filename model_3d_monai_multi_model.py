@@ -33,6 +33,10 @@ from utils.customTransforms import ToFloatUKBB
 
 from sklearn.preprocessing import OneHotEncoder
 
+GT_CONFIG = False       # True if getting ground truth baseline, False if evaluating counterfactuals
+EXP_NAME = "moin_bias"
+LABEL = "intensity_bias"
+CSV_DIR = "splits2/exp199/"
 
 # Function to convert labels to one-hot encoding
 def one_hot_encode(labels):
@@ -53,7 +57,7 @@ def main():
 
     # use parser if running from bash script
     parser = argparse.ArgumentParser()
-    parser.add_argument('--exp_name', type=str, default='moin_bias', help='experiment name')
+    parser.add_argument('--exp_name', type=str, default=EXP_NAME, help='experiment name')
     parser.add_argument('--model_name', type=str, default='resnet',
                         help='Name of the model to use: densenet, resnet, efficientnet, etc.')
     parser.add_argument('--seed', type=int, help='seed for reproducibility', default=1)
@@ -69,10 +73,6 @@ def main():
     LR = 0.0001
     PATIENCE = 5
 
-    # exp_name = 'exp_mini_test'
-    # model_name = 'cnn3d'
-    # seed = 1
-
     seed = 1  # You can use any integer as the seed
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
@@ -84,18 +84,20 @@ def main():
     g.manual_seed(seed)
 
     home_dir = './'
-    working_dir = home_dir + exp_name #+ '/SFCN/'
+    working_dir = home_dir + exp_name
+    if GT_CONFIG:
+        working_dir += '/SFCN/'
 
-    df_train = pd.read_csv(os.path.join(home_dir, "splits2/exp199/train.csv"))
-    df_val = pd.read_csv(os.path.join(home_dir, "splits2/exp199/val.csv"))
+    df_train = pd.read_csv(os.path.join(home_dir, CSV_DIR, "train.csv"))
+    df_val = pd.read_csv(os.path.join(home_dir, CSV_DIR, "val.csv"))
 
-    train_fpaths = [os.path.join(home_dir,exp_name, "train", filename.replace("nii.gz", "tiff")) for filename in
+    train_fpaths = [os.path.join(home_dir, exp_name, "train", filename.replace("nii.gz", "tiff")) for filename in
                     df_train['filename']]
-    train_class_label = one_hot_encode(df_train['intensity_bias'].values)
+    train_class_label = one_hot_encode(df_train[LABEL].values)
 
-    val_fpaths = [os.path.join(home_dir,exp_name, "val", filename.replace("nii.gz", "tiff")) for filename in
+    val_fpaths = [os.path.join(home_dir, exp_name, "val", filename.replace("nii.gz", "tiff")) for filename in
                   df_val['filename']]
-    val_class_label = one_hot_encode(df_val['intensity_bias'].values)
+    val_class_label = one_hot_encode(df_val[LABEL].values)
 
     # Define transforms
     transforms = Compose([torchvision.transforms.CenterCrop(180), EnsureChannelFirst(), ToFloatUKBB(), ToTensor()])

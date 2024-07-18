@@ -27,6 +27,11 @@ from utils.customTransforms import ToFloatUKBB
 # import config_file as cfg
 from utils.utils import model_eval, compute_metrics, plot_roc_curves
 
+GT_CONFIG = False       # True if getting ground truth baseline, False if evaluating counterfactuals
+EXP_NAME = "moin_bias"
+LABEL = "intensity_bias"
+CSV_DIR = "splits2/exp199/"
+
 BATCH_SIZE = 16
 N_WORKERS = 0
 N_EPOCHS = 20
@@ -53,7 +58,7 @@ def main():
 
     # use parser if running from bash script
     parser = argparse.ArgumentParser()
-    parser.add_argument('--exp_name', type=str, default='moin_bias', help='experiment name')
+    parser.add_argument('--exp_name', type=str, default=EXP_NAME, help='experiment name')
     parser.add_argument('--model_name', type=str, default='densenet', help='Name of the model to use: densenet, resnet, efficientnet, etc.')
 
     args = parser.parse_args()
@@ -70,15 +75,17 @@ def main():
 
 
     home_dir = './'
-    working_dir = home_dir + exp_name #+ '/SFCN/'
+    working_dir = home_dir + exp_name
+    if GT_CONFIG:
+        working_dir += '/SFCN/'
 
 
-    df_test = pd.read_csv(os.path.join(home_dir, "splits2/exp199/test.csv"))
+    df_test = pd.read_csv(os.path.join(home_dir, CSV_DIR, "test.csv"))
     test_fpaths = [os.path.join(home_dir,exp_name, "test", filename.replace("nii.gz", "tiff")) for filename in df_test['filename']]
     # test_fpaths = [os.path.join("./data/cfs", filename.replace("nii.gz", "tiff")) for filename in
     #                df_test['filename'][:248]]
 
-    test_class_label = one_hot_encode(df_test['intensity_bias'].values)
+    test_class_label = one_hot_encode(df_test[LABEL].values)
     # test_class_label = np.zeros(len(test_fpaths))
 
     # Define transforms for image
