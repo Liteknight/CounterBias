@@ -1,3 +1,7 @@
+"""
+Extracts 2D image slices from 3D images
+"""
+
 import SimpleITK as sitk
 import os
 

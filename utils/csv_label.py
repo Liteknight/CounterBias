@@ -1,3 +1,7 @@
+"""
+Adds labels for morphology and intensity bias
+"""
+
 import pandas as pd
 import os
 

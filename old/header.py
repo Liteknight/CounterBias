@@ -52,9 +52,9 @@ def read_data(dir, postfix, max_entries = -1, normalize = False):
         
     '''
 
-    train_df = pd.read_csv('./splits/train.csv')
-    val_df = pd.read_csv('./splits/val.csv')
-    test_df = pd.read_csv('./splits/test.csv')
+    train_df = pd.read_csv('../splits/train.csv')
+    val_df = pd.read_csv('../splits/val.csv')
+    test_df = pd.read_csv('../splits/test.csv')
 
     print(train_df.head())
 

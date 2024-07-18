@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 # from torchsummary import summary
 
 from SFCN import SFCNModel
+from SFCN_Class import SFCN
 from utils.customTransforms import ToFloatUKBB
 
 from sklearn.preprocessing import OneHotEncoder
@@ -83,16 +84,16 @@ def main():
     g.manual_seed(seed)
 
     home_dir = './'
-    working_dir = home_dir + exp_name + '/'
+    working_dir = home_dir + exp_name + '/SFCN/'
 
     df_train = pd.read_csv(os.path.join(home_dir, "splits2/exp199/train.csv"))
     df_val = pd.read_csv(os.path.join(home_dir, "splits2/exp199/val.csv"))
 
-    train_fpaths = [os.path.join(working_dir, "train", filename.replace("nii.gz", "tiff")) for filename in
+    train_fpaths = [os.path.join(home_dir,exp_name, "train", filename.replace("nii.gz", "tiff")) for filename in
                     df_train['filename']]
     train_class_label = one_hot_encode(df_train['intensity_bias'].values)
 
-    val_fpaths = [os.path.join(working_dir, "val", filename.replace("nii.gz", "tiff")) for filename in
+    val_fpaths = [os.path.join(home_dir,exp_name, "val", filename.replace("nii.gz", "tiff")) for filename in
                   df_val['filename']]
     val_class_label = one_hot_encode(df_val['intensity_bias'].values)
 

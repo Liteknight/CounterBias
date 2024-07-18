@@ -70,11 +70,11 @@ def main():
 
 
     home_dir = './'
-    working_dir = home_dir + exp_name + '/'
+    working_dir = home_dir + exp_name + '/SFCN/'
 
 
     df_test = pd.read_csv(os.path.join(home_dir, "splits2/exp199/test.csv"))
-    test_fpaths = [os.path.join(working_dir, "test", filename.replace("nii.gz", "tiff")) for filename in df_test['filename']]
+    test_fpaths = [os.path.join(home_dir,exp_name, "test", filename.replace("nii.gz", "tiff")) for filename in df_test['filename']]
     # test_fpaths = [os.path.join("./data/cfs", filename.replace("nii.gz", "tiff")) for filename in
     #                df_test['filename'][:248]]
 

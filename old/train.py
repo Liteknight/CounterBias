@@ -1,16 +1,13 @@
 import torchvision.transforms
 from torch.utils.tensorboard import SummaryWriter
 # from monai.transforms import CenterSpatialCrop
-from monai.data import ITKReader
 
-from header import *
-import monai
-import tifffile
+from old.header import *
 # import nibabel
 import pandas as pd
 from torch.utils.data import Dataset
 
-DIR = "./no_bias"
+DIR = "../no_bias"
 
 BATCH_SIZE = 16
 N_WORKERS = 0
