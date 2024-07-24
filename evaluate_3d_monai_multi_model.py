@@ -27,10 +27,17 @@ from utils.customTransforms import ToFloatUKBB
 # import config_file as cfg
 from utils.utils import model_eval, compute_metrics, plot_roc_curves
 
-GT_CONFIG = False       # True if getting ground truth baseline, False if evaluating counterfactuals
-EXP_NAME = "moin_bias"
-LABEL = "intensity_bias"
-CSV_DIR = "splits2/exp199/"
+GT_CONFIG = True       # True if getting ground truth baseline, False if evaluating counterfactuals
+EXP_NAME = "far_bias"
+
+if EXP_NAME == "far_bias":
+    LABEL = "bias_label"
+    CSV_DIR = "splits/"
+
+elif EXP_NAME == "moin_bias":
+    LABEL = "intensity_bias"
+    CSV_DIR = "splits2/exp199/"
+
 
 BATCH_SIZE = 16
 N_WORKERS = 0
@@ -75,9 +82,9 @@ def main():
 
 
     home_dir = './'
-    working_dir = home_dir + exp_name
+    working_dir = home_dir + exp_name + '/'
     if GT_CONFIG:
-        working_dir += '/SFCN/'
+        working_dir += 'SFCN/'
 
 
     df_test = pd.read_csv(os.path.join(home_dir, CSV_DIR, "test.csv"))
@@ -99,7 +106,7 @@ def main():
 
     # Create DenseNet121
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+    # device = torch.device("cpu")
     model = SFCNModel().to(device)
     model.load_state_dict(torch.load(working_dir + "best_model_" + exp_name + ".pth"))
 
@@ -117,40 +124,42 @@ def main():
             # Get model's probability outputs
             outputs = model(test_images)
             # probs = torch.nn.functional.softmax(outputs, dim=1).cpu().numpy()
-            all_preds.extend(outputs.cpu().numpy())
+            all_preds.append(outputs.cpu().numpy())
 
             # saver.save_batch(torch.tensor(test_outputs).to(device), test_images.meta)
 
-    print(len(all_preds))
+    all_preds = np.vstack(all_preds)
+    # print("Length: ",len(all_preds))
+
+    # print(all_preds[0])
 
     # concat predictions to test dataframe
     df = model_eval(df_test, all_preds)
     df.to_csv(working_dir + 'preds_' + exp_name + '.csv')  # save file with predictions
 
-    smooth_grad = SmoothGrad(model)
+    smooth_grad = SmoothGrad(model,0.01,50)
 
     for idx, batch_data in enumerate(test_loader):
         inputs, labels = batch_data[0].to(device), batch_data[1].to(device)
 
         for i in range(inputs.size(0)):
             input_image = inputs[i].unsqueeze(0)  # Add batch dimension
-            input_image.requires_grad_()
+            # input_image.requires_grad_()
 
-            # Apply SmoothGrad
             # print(input_image)
-            print(input_image.shape)
-            print(model(input_image))
-            print(model(input_image).shape)
+            # print(input_image.shape)
+            # print(model(input_image).max())
+            # print(model(input_image).shape)
             # print(model(inputs))
 
-            saliency_map = smooth_grad(input_image, class_idx=0)
+            saliency_map = smooth_grad(input_image)
 
             fig, ax = plt.subplots(1, 2)
-            ax[0].imshow(input_image[0].cpu().permute(1, 2, 0), cmap='gray')
+            ax[0].imshow(np.rot90(np.squeeze(input_image[0].cpu().permute(1, 2, 0)), 3), cmap='gray')
             ax[0].set_title('Input Image')
             ax[0].axis('off')
 
-            ax[1].imshow(saliency_map[0].cpu().numpy(), cmap='hot')
+            ax[1].imshow(np.rot90(np.squeeze(saliency_map[0].cpu().numpy()), 3), cmap='hot')
             ax[1].set_title('SmoothGrad Saliency Map')
             ax[1].axis('off')
 
@@ -158,14 +167,16 @@ def main():
             plt.savefig(os.path.join("./data/saliency/", f'saliency_map_{idx}_{i}.png'))
             plt.close()
 
+            break
+
         if idx == 4:  # Visualize saliency maps for the first 5 batches
             break
 
     #create one-hot encoded columns for TP, TN, FP, FN
-    df['TP'] = df.apply(lambda row: 1 if ((row['bias_label'] == 1) & (row['preds'] ==1)) else 0, axis=1)
-    df['TN'] = df.apply(lambda row: 1 if ((row['bias_label'] == 0) & (row['preds'] ==0)) else 0, axis=1)
-    df['FP'] = df.apply(lambda row: 1 if ((row['bias_label'] == 0) & (row['preds'] ==1)) else 0, axis=1)
-    df['FN'] = df.apply(lambda row: 1 if ((row['bias_label'] == 1) & (row['preds'] ==0)) else 0, axis=1)
+    df['TP'] = df.apply(lambda row: 1 if ((row[LABEL] == 1) & (row['preds'] ==1)) else 0, axis=1)
+    df['TN'] = df.apply(lambda row: 1 if ((row[LABEL] == 0) & (row['preds'] ==0)) else 0, axis=1)
+    df['FP'] = df.apply(lambda row: 1 if ((row[LABEL] == 0) & (row['preds'] ==1)) else 0, axis=1)
+    df['FN'] = df.apply(lambda row: 1 if ((row[LABEL] == 1) & (row['preds'] ==0)) else 0, axis=1)
 
     # df.to_csv(working_dir + 'preds_' + exp_name + '.csv') #save file with predictions
 

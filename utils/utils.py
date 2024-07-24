@@ -92,14 +92,15 @@ def model_eval(df_test, all_preds):
     '''
     df = df_test.copy()
     y_pred_raw = np.vstack(all_preds)  # turn list of arrays into a stacked array
-    y_pred = (torch.tensor(y_pred_raw) > 0.5).long()  # thresholding based on sigmoid output
-
+    #y_pred = (torch.tensor(y_pred_raw) > 0.5).long()  # thresholding based on sigmoid output
+    y_pred = (torch.tensor(y_pred_raw))
     # print("Raw model outputs:")
     # print(y_pred_raw)
     # print(y_pred)
     #
     # print("Shape of y_pred_raw:", y_pred_raw.shape)
     # print("Shape of y_pred:", y_pred.shape)
+    # print("Shape of y_pred.argmax(dim=1).numpy():", y_pred.argmax(dim=1).numpy().shape)
 
     df = df.rename(columns={'class_label': 'disease_label'})
     df['preds'] = y_pred.argmax(dim=1).numpy()  # Choose the index of the max logit as the predicted class

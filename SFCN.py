@@ -69,7 +69,7 @@ class SFCNModel(nn.Module):
 
         x = self.sigmoid(x)
 
-        # return torch.squeeze(x,1) # change to 2?
-        return torch.squeeze(x)
+        # return torch.squeeze(x) causes error with saliency maps
+        return x
 
             

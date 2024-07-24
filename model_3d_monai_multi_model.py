@@ -33,10 +33,16 @@ from utils.customTransforms import ToFloatUKBB
 
 from sklearn.preprocessing import OneHotEncoder
 
-GT_CONFIG = False       # True if getting ground truth baseline, False if evaluating counterfactuals
-EXP_NAME = "moin_bias"
-LABEL = "intensity_bias"
-CSV_DIR = "splits2/exp199/"
+GT_CONFIG = True       # True if getting ground truth baseline, False if evaluating counterfactuals
+EXP_NAME = "far_bias"
+
+if EXP_NAME == "far_bias":
+    LABEL = "bias_label"
+    CSV_DIR = "splits/"
+
+elif EXP_NAME == "moin_bias":
+    LABEL = "intensity_bias"
+    CSV_DIR = "splits2/exp199/"
 
 # Function to convert labels to one-hot encoding
 def one_hot_encode(labels):
@@ -90,6 +96,8 @@ def main():
 
     df_train = pd.read_csv(os.path.join(home_dir, CSV_DIR, "train.csv"))
     df_val = pd.read_csv(os.path.join(home_dir, CSV_DIR, "val.csv"))
+
+    print(working_dir)
 
     train_fpaths = [os.path.join(home_dir, exp_name, "train", filename.replace("nii.gz", "tiff")) for filename in
                     df_train['filename']]
