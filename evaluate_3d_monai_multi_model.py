@@ -31,7 +31,7 @@ GT_CONFIG = True       # True if getting ground truth baseline, False if evaluat
 EXP_NAME = "far_bias"
 
 if EXP_NAME == "far_bias":
-    LABEL = "bias_label"
+    LABEL = "class_label"
     CSV_DIR = "splits/"
 
 elif EXP_NAME == "moin_bias":

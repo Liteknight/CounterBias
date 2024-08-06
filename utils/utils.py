@@ -5,6 +5,7 @@ Created on Wed Nov 29 13:36:13 2023
 
 @author: emma
 """
+import argparse
 
 import numpy as np
 import pandas as pd
@@ -173,3 +174,13 @@ def plot_roc_curves(df, df_b1, df_b0, save_dir):
     plt.savefig(save_dir + 'ROC.png', bbox_inches='tight', dpi = 800)
     # plt.show()
     plt.clf()
+
+def dict2namespace(config):
+    namespace = argparse.Namespace()
+    for key, value in config.items():
+        if isinstance(value, dict):
+            new_value = dict2namespace(value)
+        else:
+            new_value = value
+        setattr(namespace, key, new_value)
+    return namespace
