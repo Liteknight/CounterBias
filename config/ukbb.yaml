@@ -6,6 +6,8 @@ flow:
 training:
   epochs: 200
   batch_size: 64
+  patience: 10
+  min_delta: 50
 
 optim:
   weight_decay: 0.00005

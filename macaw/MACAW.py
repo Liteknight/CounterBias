@@ -44,6 +44,8 @@ class MACAW:
         self.epochs = config.training.epochs
         self.batch_size = config.training.batch_size
         self.device = config.device
+        self.patience = config.training.patience
+        self.min_delta = config.training.min_delta
 
         self.dim = None
         self.model = None
@@ -141,8 +143,6 @@ class MACAW:
             scheduler = None
 
         # Early stopping parameters
-        patience = 10
-        min_delta = 50
         best_val_loss = float('inf')
         epochs_no_improve = 0
 
@@ -202,13 +202,13 @@ class MACAW:
             loss_vals_val.append(val_loss)
 
             # Check for early stopping
-            if val_loss < best_val_loss - min_delta:
+            if val_loss < best_val_loss - self.min_delta:
                 best_val_loss = val_loss
                 epochs_no_improve = 0
             else:
                 epochs_no_improve += 1
 
-            if epochs_no_improve >= patience:
+            if epochs_no_improve >= self.patience:
                 print(f'Early stopping at epoch {e + 1}')
                 break
 
