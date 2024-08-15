@@ -4,3 +4,7 @@
 /data
 /exp*
 /models/KPCA*
+*.tiff
+*/test
+*/val
+*/train
