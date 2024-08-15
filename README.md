@@ -4,6 +4,8 @@ To train MACAW, run notebooks 02 and 03. You can then create and export counterf
 
 To use the SFCN, either as a baseline or on counterfactuals, simply run the train file then the eval file, making sure to change any file locations or settings as needed.
 
+You can use extract.py in /utils/ if you need to convert a new group's 3D images to 2D.
+
 #### Bias subset folders
 - far_bias: morphology bias in right hemisphere
 - int_bias: moin_bias without morphology bias
